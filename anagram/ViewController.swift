@@ -35,7 +35,7 @@ class ViewController: UITableViewController {
         tableView.reloadData()
     }
     
-    override func numberOfSections(in tableView: UITableView) -> Int {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return usedWords.count
     }
     
@@ -59,8 +59,63 @@ class ViewController: UITableViewController {
         present(ac,animated: true)
     }
 
+    // submits answer
     func submit(_ answer:String) {
         
+        let alertTitle:String
+        
+        let lowerAnswer = answer.lowercased()
+        if isPossible(word: lowerAnswer){
+            if isOriginal(word: lowerAnswer){
+                if isReal(word: lowerAnswer){
+                    usedWords.insert(lowerAnswer, at: 0)
+                    
+                    let indexPath = IndexPath(row: 0, section: 0)
+                    tableView.insertRows(at: [indexPath], with: .automatic)
+                    
+                    return
+                }else {
+                    alertTitle = "Word not recognized"
+                }
+            }else {
+                alertTitle = "You used this word"
+            }
+        }else {
+            alertTitle = "The word is not possible"
+        }
+        
+        let ac = UIAlertController(title: alertTitle, message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(ac,animated: true)
+        
+    }
+    
+    // cheks if the word is possible
+    func isPossible(word:String) -> Bool {
+        var tempWord = title?.lowercased()
+        
+        for letter in word {
+            if let position = tempWord?.firstIndex(of: letter){
+                tempWord?.remove(at: position)
+            }else {
+                return false
+            }
+        }
+        return true
+    }
+    
+    //cheks is the word used yet
+    func isOriginal(word:String) -> Bool {
+        return !usedWords.contains(word)
+    }
+    
+    //cheks is the world real english word
+    func isReal(word:String) -> Bool {
+        let checker = UITextChecker()
+        let range = NSRange(location: 0, length: word.utf16.count)
+        let misspeledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+        
+        return misspeledRange.location == NSNotFound
     }
 }
 
