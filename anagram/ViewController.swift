@@ -16,6 +16,7 @@ class ViewController: UITableViewController {
         super.viewDidLoad()
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(promptForAnswer))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Restart", style: .plain, target: self, action: #selector(startGame))
         
         if let startWordsUrl = Bundle.main.url(forResource: "start", withExtension: "txt"){
             if let startWords = try? String(contentsOf: startWordsUrl){
@@ -29,7 +30,7 @@ class ViewController: UITableViewController {
         startGame()
     }
     
-    func startGame() {
+    @objc func startGame() {
         title = allWords.randomElement()
         usedWords.removeAll(keepingCapacity: true)
         tableView.reloadData()
@@ -68,26 +69,40 @@ class ViewController: UITableViewController {
         if isPossible(word: lowerAnswer){
             if isOriginal(word: lowerAnswer){
                 if isReal(word: lowerAnswer){
-                    usedWords.insert(lowerAnswer, at: 0)
+                    if isNotSame(word: lowerAnswer){
+                        usedWords.insert(lowerAnswer, at: 0)
+                        
+                        let indexPath = IndexPath(row: 0, section: 0)
+                        tableView.insertRows(at: [indexPath], with: .automatic)
+                        
+                        return
+                        
+                    }else {
+                        alertTitle = "It is same word as the title word"
+                        showAlert(alertTitle)
+                    }
                     
-                    let indexPath = IndexPath(row: 0, section: 0)
-                    tableView.insertRows(at: [indexPath], with: .automatic)
-                    
-                    return
-                }else {
+                }
+                else {
                     alertTitle = "Word not recognized"
+                    showAlert(alertTitle)
                 }
             }else {
                 alertTitle = "You used this word"
+                showAlert(alertTitle)
             }
         }else {
             alertTitle = "The word is not possible"
+            showAlert(alertTitle)
+            
         }
         
-        let ac = UIAlertController(title: alertTitle, message: nil, preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(ac,animated: true)
-        
+    }
+    
+    func showAlert( _ title:String){
+        let ac = UIAlertController(title: title, message: nil, preferredStyle: .alert)
+               ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+               present(ac,animated: true)
     }
     
     // cheks if the word is possible
@@ -111,11 +126,21 @@ class ViewController: UITableViewController {
     
     //cheks is the world real english word
     func isReal(word:String) -> Bool {
-        let checker = UITextChecker()
-        let range = NSRange(location: 0, length: word.utf16.count)
-        let misspeledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+        if word.count < 4 {
+            return false
+        }else {
+            let checker = UITextChecker()
+            let range = NSRange(location: 0, length: word.utf16.count)
+            let misspeledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+            
+            return misspeledRange.location == NSNotFound
+        }
         
-        return misspeledRange.location == NSNotFound
+       
+    }
+    //cheks whether user word is the same as title word
+    func isNotSame(word:String) -> Bool{
+        return !(word == title?.lowercased())
     }
 }
 
